@@ -157,7 +157,7 @@ class PathILC:
         return self.u.copy()
 
     def load_table(self, table):
-        """Load a correction table (e.g. one predicted by the AI layer)."""
+        """Load a correction table (e.g. one predicted by the learned layer)."""
         table = np.asarray(table)
         assert table.shape == self.u.shape
         self.u = table.copy()

@@ -5,12 +5,12 @@ friction, backlash, encoder noise, thermal drift). See kuka.Effects.
     python src/figures_realism.py
 
 Writes to ../outputs:
-  r1_ablation.png      - ILC stays accurate under each realistic effect
+  realistic_effects_ablation.png      - ILC stays accurate under each realistic effect
                          (repeatable effects are learned; noise is filtered)
-  r2_qfilter.png       - the Gaussian Q-filter rejects encoder noise: without
+  qfilter_noise_rejection.png       - the Gaussian Q-filter rejects encoder noise: without
                          it the ILC learns the noise and the correction is junk
-  r3_transmission.png  - the injected angle-periodic transmission-error profile
-  r4_thermal.png       - thermal drift defeats a FROZEN ILC table, while an
+  transmission_error_profile.png  - the injected angle-periodic transmission-error profile
+  thermal_frozen_vs_online.png       - thermal drift defeats a FROZEN ILC table, while an
                          ONLINE (continuously updating) ILC tracks the warm-up
 """
 
@@ -23,18 +23,14 @@ import matplotlib.pyplot as plt
 
 os.environ.setdefault("MUJOCO_GL", "glx")
 sys.path.insert(0, os.path.dirname(__file__))
-from kuka import FlexArmPlant, Effects, STIFFNESS  # noqa: E402
+from kuka_plant import FlexArmPlant, Effects, STIFFNESS  # noqa: E402
 from ilc import PathILC  # noqa: E402
-from run_kuka import make_reference, run_trial  # noqa: E402
+from kuka_simulation import make_reference, run_trial  # noqa: E402
+from plot_style import use_style, C, label_bars  # noqa: E402
 
+use_style()
 OUT = os.path.join(os.path.dirname(__file__), "..", "outputs")
 os.makedirs(OUT, exist_ok=True)
-plt.rcParams.update({
-    "font.size": 11, "axes.titlesize": 12.5, "axes.labelsize": 11,
-    "axes.grid": True, "grid.alpha": 0.30, "figure.dpi": 130,
-    "axes.spines.top": False, "axes.spines.right": False,
-    "lines.linewidth": 1.8, "legend.fontsize": 9,
-})
 
 N, HOLD, SETTLE = 200, 30, 500
 REF = None
@@ -78,17 +74,20 @@ def fig_ablation():
         print(f"  {name.replace(chr(10),' '):22s} raw={rms[0]:7.0f}  final={rms[-1]:6.0f} um")
     x = np.arange(len(configs)); w = 0.4
     fig, ax = plt.subplots(figsize=(10.5, 4.6))
-    ax.bar(x - w / 2, raw, w, color="#cc6677", label="trial 0 (no correction)")
-    b = ax.bar(x + w / 2, final, w, color="#228833", label="after ILC")
+    ax.bar(x - w / 2, raw, w, color=C.NO_CORR, zorder=3, edgecolor="white",
+           linewidth=0.7, label="trial 0 (no correction)")
+    ax.bar(x + w / 2, final, w, color=C.ILC, zorder=3, edgecolor="white",
+           linewidth=0.7, label="after ILC")
     for xi, v in zip(x, final):
-        ax.text(xi + w / 2, v, f"{v:.0f}", ha="center", va="bottom", fontsize=8)
+        ax.text(xi + w / 2, v * 1.04, f"{v:.0f}", ha="center", va="bottom",
+                fontsize=8)
     ax.set_yscale("log")
     ax.set_xticks(x); ax.set_xticklabels([c[0] for c in configs])
     ax.set_ylabel("Cartesian RMS [µm] (log)")
     ax.set_title("Path-ILC stays accurate under realistic drivetrain effects\n"
                  "(repeatable effects are learned away; encoder noise is filtered)")
     ax.legend(loc="upper left")
-    fig.tight_layout(); fig.savefig(os.path.join(OUT, "r1_ablation.png")); plt.close(fig)
+    fig.tight_layout(); fig.savefig(os.path.join(OUT, "realistic_effects_ablation.png")); plt.close(fig)
 
 
 def fig_qfilter():
@@ -101,20 +100,20 @@ def fig_qfilter():
     uf = np.array([ilc_f.correction_at(l)[1] for l in lam]) * 1e3
     un = np.array([ilc_n.correction_at(l)[1] for l in lam]) * 1e3
     fig, ax = plt.subplots(1, 2, figsize=(12.0, 4.4))
-    ax[0].plot(range(8), rms_n, "s--", color="#cc6677", label="no Q-filter")
-    ax[0].plot(range(8), rms_f, "o-", color="#228833", label="Gaussian Q-filter")
+    ax[0].plot(range(8), rms_n, "s--", color=C.WARM, label="no Q-filter")
+    ax[0].plot(range(8), rms_f, "o-", color=C.LEARNED, label="Gaussian Q-filter")
     ax[0].set_yscale("log"); ax[0].set_xlabel("trial")
     ax[0].set_ylabel("Cartesian RMS [µm] (log)")
     ax[0].set_title("Convergence under noisy encoders"); ax[0].legend()
-    ax[1].plot(lam, un, color="#cc6677", lw=1.0, label="no Q-filter (learns noise)")
-    ax[1].plot(lam, uf, color="#228833", label="Gaussian Q-filter (smooth)")
+    ax[1].plot(lam, un, color=C.WARM, lw=1.0, label="no Q-filter (learns noise)")
+    ax[1].plot(lam, uf, color=C.LEARNED, label="Gaussian Q-filter (smooth)")
     ax[1].set_xlabel(r"path parameter $\lambda$")
     ax[1].set_ylabel("learned correction, joint 2 [mrad]")
     ax[1].set_title("The Q-filter stops the ILC learning noise"); ax[1].legend()
     fig.suptitle("Gaussian Q-filter rejects encoder noise (its purpose in the paper)",
                  fontsize=12.5)
     fig.tight_layout(rect=[0, 0, 1, 0.93])
-    fig.savefig(os.path.join(OUT, "r2_qfilter.png")); plt.close(fig)
+    fig.savefig(os.path.join(OUT, "qfilter_noise_rejection.png")); plt.close(fig)
 
 
 def fig_transmission():
@@ -129,7 +128,7 @@ def fig_transmission():
     ax.set_title("Injected angle-periodic transmission error\n"
                  "(gear/cycloidal harmonics — 'up to 100× per revolution')")
     ax.legend()
-    fig.tight_layout(); fig.savefig(os.path.join(OUT, "r3_transmission.png")); plt.close(fig)
+    fig.tight_layout(); fig.savefig(os.path.join(OUT, "transmission_error_profile.png")); plt.close(fig)
 
 
 def fig_thermal():
@@ -159,9 +158,9 @@ def fig_thermal():
 
     t = np.arange(n_trials)
     fig, ax = plt.subplots(figsize=(8.8, 4.6))
-    ax.plot(t, rms_frozen, "o-", color="#cc6677",
+    ax.plot(t, rms_frozen, "o-", color=C.WARM,
             label=f"frozen ILC (table fixed after trial {freeze-1})")
-    ax.plot(t, rms_online, "s-", color="#228833",
+    ax.plot(t, rms_online, "s-", color=C.LEARNED,
             label="online ILC (keeps updating)")
     ax.axvline(freeze - 1, color="0.6", ls=":", lw=1)
     ax.annotate("table frozen", xy=(freeze - 1, rms_frozen[freeze - 1]),
@@ -173,10 +172,10 @@ def fig_thermal():
                  "an online (self-learning) ILC tracks the warm-up")
     ax.legend(loc="center left")
     ax2 = ax.twinx(); ax2.grid(False)
-    ax2.plot(t, temp_tr, color="#b8860b", alpha=0.6)
-    ax2.set_ylabel("joint temperature (a.u.)", color="#b8860b")
-    ax2.tick_params(axis="y", labelcolor="#b8860b")
-    fig.tight_layout(); fig.savefig(os.path.join(OUT, "r4_thermal.png")); plt.close(fig)
+    ax2.plot(t, temp_tr, color=C.NAIVE, alpha=0.7)
+    ax2.set_ylabel("joint temperature (a.u.)", color=C.NAIVE)
+    ax2.tick_params(axis="y", labelcolor=C.NAIVE)
+    fig.tight_layout(); fig.savefig(os.path.join(OUT, "thermal_frozen_vs_online.png")); plt.close(fig)
 
 
 TEMP_PROFILE = np.array([1.0, 1.0, 0.8, 0.8, 0.6, 0.5, 0.5])   # differential heating
@@ -208,7 +207,7 @@ def _eval_table_at_temp(level, table):
 
 
 def fig_thermal_ai():
-    """Temperature-aware AI layer: learn correction = f(joint temperature), then
+    """Temperature-aware learned layer (a temperature-indexed linear model): learn correction = f(joint temperature), then
     predict the correction for an UNSEEN thermal state with zero trials. Beats a
     frozen cold table; matches the oracle that re-learns at that temperature."""
     levels = np.array([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
@@ -228,50 +227,52 @@ def fig_thermal_ai():
 
     # held-out hot state
     frozen_rms = _eval_table_at_temp(test_level, tables[0].reshape(N, 7))  # cold table
-    ai_table = predict(test_level * TEMP_PROFILE)
-    ai_rms = _eval_table_at_temp(test_level, ai_table)
+    nn_table = predict(test_level * TEMP_PROFILE)
+    nn_rms = _eval_table_at_temp(test_level, nn_table)
     oracle_table, oracle_rms = _converge_at_temp(test_level)
     print(f"  test temp {test_level}:  frozen(cold)={frozen_rms:.0f}  "
-          f"AI(0 trials)={ai_rms:.0f}  oracle={oracle_rms:.0f} um")
+          f"learned(0 trials)={nn_rms:.0f}  oracle={oracle_rms:.0f} um")
 
     fig, ax = plt.subplots(1, 2, figsize=(12.0, 4.4))
-    names = ["frozen\n(cold table)", "AI predicted\n(0 trials)", "oracle\n(re-learn)"]
-    vals = [frozen_rms, ai_rms, oracle_rms]
-    ax[0].bar(names, vals, color=["#cc6677", "#228833", "#4477aa"])
-    for i, v in enumerate(vals):
-        ax[0].text(i, v, f"{v:.0f}", ha="center", va="bottom")
-    ax[0].set_ylabel("Cartesian RMS [µm]")
+    names = ["frozen\n(cold table)", "learned\n(0 trials)", "oracle\n(re-learn)"]
+    vals = np.array([frozen_rms, nn_rms, oracle_rms], dtype=float)
+    ax[0].bar(names, vals, color=[C.WARM, C.LEARNED, C.BASE], zorder=3,
+              edgecolor="white", linewidth=0.7)
+    ax[0].set_yscale("log")
+    ax[0].set_ylim(10 ** np.floor(np.log10(vals.min() * 0.6)), vals.max() * 2.6)
+    label_bars(ax[0], vals)
+    ax[0].set_ylabel("Cartesian RMS [µm] (log)")
     ax[0].set_title(f"Correction at an unseen thermal state\n(temp level {test_level})")
     lam_arr = REF[0]
-    ax[1].plot(lam_arr, 1e3 * oracle_table[:, 1], color="#4477aa",
+    ax[1].plot(lam_arr, 1e3 * oracle_table[:, 1], color=C.BASE,
                label="oracle (re-learned hot)")
-    ax[1].plot(lam_arr, 1e3 * ai_table[:, 1], "--", color="#228833",
-               label="AI predicted from temperature")
-    ax[1].plot(lam_arr, 1e3 * tables[0].reshape(N, 7)[:, 1], ":", color="#cc6677",
+    ax[1].plot(lam_arr, 1e3 * nn_table[:, 1], "--", color=C.LEARNED,
+               label="learned (linear) from temperature")
+    ax[1].plot(lam_arr, 1e3 * tables[0].reshape(N, 7)[:, 1], ":", color=C.WARM,
                label="cold table (frozen)")
     ax[1].set_xlabel(r"path parameter $\lambda$")
     ax[1].set_ylabel("joint-2 correction [mrad]")
     ax[1].set_title("Predicted vs required correction"); ax[1].legend(fontsize=8)
-    fig.suptitle("Temperature-aware AI layer predicts the thermal-drift "
-                 "compensation (AI on top of ILC)", fontsize=12.5)
+    fig.suptitle("Temperature-aware learned layer predicts the thermal-drift "
+                 "compensation (a linear model on top of ILC)", fontsize=12.5)
     fig.tight_layout(rect=[0, 0, 1, 0.93])
-    fig.savefig(os.path.join(OUT, "r5_thermal_ai.png")); plt.close(fig)
+    fig.savefig(os.path.join(OUT, "thermal_learned_compensation.png")); plt.close(fig)
 
 
 def main():
     global REF
     REF = make_reference("A", n=N)
-    print("[r1] ablation across realistic effects ...")
+    print("[1/5] ablation across realistic effects ...")
     fig_ablation()
-    print("[r2] Q-filter noise rejection ...")
+    print("[2/5] Q-filter noise rejection ...")
     fig_qfilter()
-    print("[r3] transmission-error profile ...")
+    print("[3/5] transmission-error profile ...")
     fig_transmission()
-    print("[r4] thermal drift: frozen vs online ILC ...")
+    print("[4/5] thermal drift: frozen vs online ILC ...")
     fig_thermal()
-    print("[r5] temperature-aware AI layer ...")
+    print("[5/5] temperature-aware learned layer ...")
     fig_thermal_ai()
-    print("Done. Saved r1..r5 in outputs/.")
+    print("Done. Saved realistic-effects figures in outputs/.")
 
 
 if __name__ == "__main__":

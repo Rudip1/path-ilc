@@ -21,9 +21,9 @@ import matplotlib.animation as animation
 os.environ.setdefault("MUJOCO_GL", "glx")
 sys.path.insert(0, os.path.dirname(__file__))
 import mujoco  # noqa: E402
-from kuka import FlexArmPlant, Effects  # noqa: E402
-from run_kuka import make_reference, run_trial, new_ilc  # noqa: E402
-from view_kuka import make_cam, _add_sphere, AMP, SETTLE, HOLD  # noqa: E402
+from kuka_plant import FlexArmPlant, Effects  # noqa: E402
+from kuka_simulation import make_reference, run_trial, new_ilc  # noqa: E402
+from render_kuka import make_cam, _add_sphere, AMP, SETTLE, HOLD  # noqa: E402
 
 OUT = os.path.join(os.path.dirname(__file__), "..", "outputs")
 N, T, FREEZE = 200, 12, 5

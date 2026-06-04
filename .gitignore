@@ -14,8 +14,13 @@ venv/
 *.swp
 .DS_Store
 
-# Third-party MuJoCo tutorial (learning reference only, not imported)
-MuJoCo_tutorials-main/
+# LaTeX build artifacts
+*.aux
+*.log
+*.out
+*.toc
+*.synctex.gz
 
-# PhD position description (not for distribution)
-papers/PhD_Position_Industrial-Robotics_AI-Enhanced-High-Accuracy-Robotics-for-Industrial-Applications.pdf
+# (not for distribution)
+FIGURES.md
+apply/

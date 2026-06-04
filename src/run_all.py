@@ -18,17 +18,17 @@ PY = sys.executable
 
 # (script, description). "core" = experiments + figures; "media" = GIFs / MP4s.
 CORE = [
-    ("main.py", "toy 3-DOF demo (1–4)"),
-    ("main_kuka.py", "KUKA headline experiments (k1–k4, realistic effects)"),
-    ("main_kuka_contact.py", "KUKA contact task (k5)"),
-    ("figures_kuka.py", "paper-style / validation / vibration figures (p1–p4)"),
-    ("figures_realism.py", "realistic-effects figures (r1–r5)"),
+    ("experiments_toy.py", "toy 3-DOF demo (convergence, transfer, neural net)"),
+    ("experiments_kuka.py", "KUKA headline experiments (convergence, speed, transfer, neural net)"),
+    ("experiments_contact.py", "KUKA contact task"),
+    ("figures_analysis.py", "analysis figures (trialwise overview, encoder validation, modal)"),
+    ("figures_realism.py", "realistic-effects figures (ablation, Q-filter, thermal)"),
 ]
 MEDIA = [
-    ("view.py", "toy arm GIF"),
-    ("view_kuka.py", "KUKA tracking GIF"),
-    ("view_kuka_contact.py", "KUKA contact GIF"),
-    ("dashboard_kuka.py", "learning dashboard MP4"),
+    ("render_toy.py", "toy arm GIF"),
+    ("render_kuka.py", "KUKA tracking GIF"),
+    ("render_contact.py", "KUKA contact GIF"),
+    ("dashboard_learning.py", "learning dashboard MP4"),
     ("dashboard_thermal.py", "thermal-adaptation dashboard MP4"),
 ]
 
