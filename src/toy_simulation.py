@@ -93,7 +93,8 @@ def run_trial(plant, ilc, lambdas, xz_ref, q_ref, speed=1.0,
     """Execute one trial. 'speed' resamples how fast lambda advances to test
     speed generalization (the ILC table is indexed by lambda, so it should
     transfer). Returns dict with joint error (for ILC) and true Cartesian
-    error (for evaluation)."""
+    error (for evaluation): keys `lambdas`, `eq` (joint error [rad]),
+    `cart_err_m`, `rms_um`, `max_um`, `xz_true`, `xz_des`."""
     n = len(lambdas)
     # resample the lambda schedule for the requested speed: fewer control
     # steps when faster, more when slower. We pick visited indices accordingly.

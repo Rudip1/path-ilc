@@ -43,6 +43,11 @@ HEADLINE = Effects.realistic_repeatable()
 
 
 def train_ilc(plant, kind="A", n_trials=N_TRIALS):
+    """Run `n_trials` ILC trials on path `kind` (trial 0 without correction).
+
+    Returns (ilc, (lambdas, xyz, q_ref), rms_per_trial, max_per_trial,
+    last_trial_result).
+    """
     lambdas, xyz, qref = make_reference(kind, n=N)
     ilc = new_ilc(len(lambdas))
     rms_hist, max_hist, last = [], [], None
@@ -56,6 +61,7 @@ def train_ilc(plant, kind="A", n_trials=N_TRIALS):
 
 
 def train_ilc_morph(plant, m, n_trials=5):
+    """Run ILC on the morphed path `m`; return (ilc, (lambdas, xyz, q_ref))."""
     lambdas, xyz, qref = make_reference_morph(m, n=N)
     ilc = new_ilc(len(lambdas))
     for i in range(n_trials):
@@ -101,6 +107,7 @@ def fig_convergence(rmsA, maxA, xyzA, r0, rF):
 
 
 def main():
+    """Run the four KUKA experiments and write their figures to outputs/."""
     plant = FlexArmPlant(effects=HEADLINE)
 
     # ---- 1) convergence on the 3D base path ----------------------------
@@ -172,16 +179,16 @@ def main():
         lam_t, xyz_t, qref_t = make_reference_morph(test_m, n=N)
         pred = learned_correction.predict_table(net, norm, learned_correction.path_features(lam_t, xyz_t),
                                 N=len(lam_t), dof=7)
-        ilc_ai = new_ilc(len(lam_t)); ilc_ai.load_table(pred)
-        r_ai = run_trial(plant, ilc_ai, lam_t, xyz_t, qref_t, hold=HOLD,
+        ilc_nn = new_ilc(len(lam_t)); ilc_nn.load_table(pred)
+        r_nn = run_trial(plant, ilc_nn, lam_t, xyz_t, qref_t, hold=HOLD,
                          settle=SETTLE, use_ilc=True)
-        r_none_t = run_trial(plant, ilc_ai, lam_t, xyz_t, qref_t, hold=HOLD,
+        r_none_t = run_trial(plant, ilc_nn, lam_t, xyz_t, qref_t, hold=HOLD,
                              settle=SETTLE, use_ilc=False)
         ilcA0, _ = train_ilc_morph(plant, 0.0, n_trials=5)
         ilc_nv = new_ilc(len(lam_t)); ilc_nv.load_table(ilcA0.correction_table())
         r_nv = run_trial(plant, ilc_nv, lam_t, xyz_t, qref_t, hold=HOLD,
                          settle=SETTLE, use_ilc=True)
-        nn_vals = [r_none_t["rms_um"], r_nv["rms_um"], r_ai["rms_um"]]
+        nn_vals = [r_none_t["rms_um"], r_nv["rms_um"], r_nn["rms_um"]]
         print(f"      unseen path  no correction: {nn_vals[0]:.0f} um")
         print(f"      unseen path  naive (A table): {nn_vals[1]:.0f} um")
         print(f"      unseen path  NN (0 trials):   {nn_vals[2]:.0f} um")

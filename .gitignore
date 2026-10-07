@@ -8,10 +8,17 @@ __pycache__/
 .venv/
 venv/
 
+# Build / install / log directories
+build/
+install/
+log/
+dist/
+
 # Editor / IDE
 .vscode/
 .idea/
 *.swp
+*.asv
 .DS_Store
 
 # LaTeX build artifacts
@@ -21,6 +28,13 @@ venv/
 *.toc
 *.synctex.gz
 
+# Generated media (the README uses the GIFs committed in media/)
+outputs/*.mp4
+outputs/*.gif
+
+# Archives
+*.zip
+*.tar.gz
+
 # (not for distribution)
 FIGURES.md
-apply/

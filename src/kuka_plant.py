@@ -67,8 +67,8 @@ ARMATURE_M = np.array([1.2, 1.2, 0.6, 0.5, 0.2, 0.15, 0.1])                  # r
 
 @dataclass
 class Effects:
-    """Toggles + parameters for the realistic drivetrain effects (see the
-    'deep research' roadmap). All OFF by default, so the basic experiments are
+    """Toggles + parameters for the realistic drivetrain effects. All OFF by
+    default, so the basic experiments are
     unchanged; `Effects.realistic()` turns everything on.
 
     Physics (per joint i, on the LINK degree of freedom):
@@ -112,6 +112,8 @@ class Effects:
 
     @classmethod
     def realistic(cls, **over):
+        """All realistic effects ON (including the non-repetitive thermal
+        drift). Keyword arguments override individual fields."""
         return cls(te=True, stribeck=True, backlash=True, thermal=True,
                    encoder_noise=True, **over)
 
@@ -126,10 +128,13 @@ class Effects:
 
     @property
     def any_joint_force(self):
+        """True if any enabled effect applies a disturbance torque on the
+        link DOFs (encoder noise alone does not)."""
         return self.te or self.stribeck or self.backlash or self.thermal
 
 
 def _find_parent(root, child):
+    """Return the XML element that directly contains `child` (or None)."""
     for el in root.iter():
         if child in list(el):
             return el
@@ -146,6 +151,27 @@ def build_flexible_model(stiffness=STIFFNESS, damping=DAMPING_L,
     (torsional spring `stiffness[i]`, damper, Coulomb friction) inside the real
     link body, and a new actuated `jointi_motor` is inserted on a massless
     rotor body just outboard of it. Actuators drive the motor joints.
+
+    Parameters
+    ----------
+    stiffness, damping, friction, armature : (7,) arrays
+        Per-axis spring stiffness [Nm/rad], link damping [Nms/rad], Coulomb
+        friction [Nm] and reflected rotor inertia of the motor DOF.
+    marker_xyz : (M, 3) array, optional
+        Desired-path points drawn as static, non-colliding spheres (visual only).
+    contact_z : float, optional
+        If given, add a worktable whose top is at this height plus a tool-tip
+        sphere on link7; only these two geoms collide.
+    contact_center : (x, y)
+        Horizontal centre of the worktable.
+    effects : Effects, optional
+        Only `effects.backlash` matters here: it zeroes the native joint
+        stiffness so the dead-zone spring can be applied in software.
+
+    Returns
+    -------
+    mujoco.MjModel
+        The compiled flexible-joint model (nq = 14 for the arm alone).
     """
     tree = ET.parse(_MJCF)
     root = tree.getroot()
@@ -291,6 +317,9 @@ def load_rigid_model():
 # site Jacobian. These never see the flexible plant's springs.
 # --------------------------------------------------------------------------
 class RigidKinematics:
+    """Forward/inverse kinematics of the ideal rigid iiwa14 to the
+    `attachment_site` (TCP). This is the model the controller trusts."""
+
     def __init__(self):
         self.model = load_rigid_model()
         self.data = mujoco.MjData(self.model)
@@ -298,11 +327,18 @@ class RigidKinematics:
             self.model, mujoco.mjtObj.mjOBJ_SITE, "attachment_site")
 
     def fk(self, q):
+        """TCP position (x, y, z) [m] for the 7 joint angles `q` [rad]."""
         self.data.qpos[:7] = q
         mujoco.mj_forward(self.model, self.data)
         return self.data.site_xpos[self.site].copy()
 
     def ik(self, target_xyz, q_init=None, iters=300, tol=1e-6):
+        """Position-only IK by damped least squares on the site Jacobian.
+
+        Starts from `q_init` (default HOME), clips to the joint limits after
+        every step and stops when the TCP error norm drops below `tol` [m] or
+        after `iters` iterations. Returns the 7 joint angles [rad].
+        """
         q = HOME.copy() if q_init is None else q_init.copy()
         jacp = np.zeros((3, self.model.nv))
         for _ in range(iters):
@@ -322,7 +358,17 @@ class RigidKinematics:
 
 class FlexArmPlant:
     """The flexible KUKA. Talks to the controller via motor commands and
-    exposes motor-side + joint-side encoders. True TCP for evaluation only."""
+    exposes motor-side + joint-side encoders. True TCP for evaluation only.
+
+    Parameters
+    ----------
+    effects : Effects, optional
+        Realistic drivetrain effects to simulate (default: none).
+    seed : int
+        Seed of the encoder-noise random generator.
+    **params
+        Forwarded to `build_flexible_model` (e.g. `contact_z`, `marker_xyz`).
+    """
 
     def __init__(self, effects=None, seed=0, **params):
         self.fx = effects or Effects()
@@ -358,9 +404,14 @@ class FlexArmPlant:
         self.thermal_frozen = True
 
     def freeze_thermal(self, flag=True):
+        """Hold (True) or release (False) the current temperature state."""
         self.thermal_frozen = flag
 
     def reset(self, q_motor, reset_thermal=False):
+        """Place the motors at `q_motor` with zero deflection and velocity.
+
+        The thermal state is kept unless `reset_thermal` is True.
+        """
         # Each link joint's coordinate is the elastic deflection RELATIVE to its
         # rotor, so its rest value is 0 (link aligned with motor). The absolute
         # joint angle lives in the motor coordinate. Thermal state PERSISTS
@@ -405,6 +456,8 @@ class FlexArmPlant:
         self.temp += dt * (power / self.fx.therm_C - self.temp / self.fx.therm_tau)
 
     def command_motor(self, q_cmd):
+        """Apply motor position command `q_cmd` (7,) and advance one physics
+        step, including the enabled drivetrain disturbances and heating."""
         self.data.ctrl[:7] = q_cmd
         if self.fx.any_joint_force:
             self.data.qfrc_applied[self.dofadr_l] = self._joint_disturbance()

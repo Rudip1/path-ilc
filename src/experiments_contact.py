@@ -32,6 +32,7 @@ HOLD, SETTLE, N_TRIALS, N = 30, 500, 8, 200
 
 
 def main():
+    """Run the contact-task ILC session and write kuka_contact_task.png."""
     plant = make_contact_plant(effects=Effects.realistic_repeatable())
     lambdas, xyz, qref = make_contact_reference(n=N)
     ilc = new_ilc(len(lambdas))

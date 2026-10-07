@@ -132,6 +132,7 @@ def run_capture(model, ilc, ref, use_ilc, renderer, cam, label, frames,
 
 
 def render_gif(path=os.path.join(OUT, "toy_arm_tracking.gif")):
+    """Train the toy-arm ILC, then render no-ILC / after-ILC passes to a GIF."""
     from PIL import Image
     # train on a plain model, then visualize on the marker model
     lambdas, xz, qref = make_reference("A", n=400)
@@ -154,6 +155,7 @@ def render_gif(path=os.path.join(OUT, "toy_arm_tracking.gif")):
 
 
 def live():
+    """Train, then loop no-ILC / after-ILC passes in the interactive viewer."""
     import mujoco.viewer
     lambdas, xz, qref = make_reference("A", n=400)
     model = build_model_with_path(xz)

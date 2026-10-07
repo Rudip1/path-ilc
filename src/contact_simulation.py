@@ -40,6 +40,8 @@ def contact_point(lam):
 
 
 def make_contact_reference(n=200):
+    """Desired tool-centre circle on the table and its ideal (rigid-model)
+    joint references. Returns (lambdas, xyz, q_ref)."""
     lambdas = np.linspace(0.0, 1.0, n)
     xyz = np.array([contact_point(l) for l in lambdas])
     q = np.zeros((n, 7)); q_prev = _KIN.ik(xyz[0], q_init=HOME)
@@ -49,6 +51,7 @@ def make_contact_reference(n=200):
 
 
 def make_contact_plant(marker_xyz=None, effects=None):
+    """Flexible KUKA plant with the worktable and tool-tip contact geometry."""
     return FlexArmPlant(contact_z=TABLE_Z, contact_center=CENTER,
                         marker_xyz=marker_xyz, effects=effects)
 
