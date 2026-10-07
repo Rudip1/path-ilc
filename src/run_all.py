@@ -34,6 +34,7 @@ MEDIA = [
 
 
 def run(script, desc):
+    """Run one script in a subprocess with MUJOCO_GL=glx; return True on success."""
     print(f"\n=== {script}  —  {desc} ===", flush=True)
     t0 = time.time()
     env = dict(os.environ, MUJOCO_GL="glx")
@@ -45,6 +46,7 @@ def run(script, desc):
 
 
 def main():
+    """Run every script (`--quick` skips the GIF/MP4 renderers)."""
     quick = "--quick" in sys.argv
     scripts = CORE + ([] if quick else MEDIA)
     print(f"Running {len(scripts)} scripts" + (" (quick: no videos)" if quick else ""))

@@ -62,6 +62,7 @@ def train_ilc_on_morph(plant, m, n=400, n_trials=N_TRIALS):
 
 
 def main():
+    """Run the four toy-arm experiments and write their figures to outputs/."""
     plant = ArmPlant()
 
     # ---- Goal: classical convergence on base path A --------------------
@@ -167,11 +168,11 @@ def main():
         feat_t = learned_correction.path_features(lam_t, xz_t)
         pred = learned_correction.predict_table(net, norm, feat_t, N=len(lam_t))
 
-        ilc_ai = new_ilc(len(lam_t)); ilc_ai.load_table(pred)
-        r_ai = run_trial(plant, ilc_ai, lam_t, xz_t, qref_t, speed=SPEED,
+        ilc_nn = new_ilc(len(lam_t)); ilc_nn.load_table(pred)
+        r_nn = run_trial(plant, ilc_nn, lam_t, xz_t, qref_t, speed=SPEED,
                          settle=SETTLE, use_ilc=True)
         # baselines on the same unseen path
-        r_none_t = run_trial(plant, ilc_ai, lam_t, xz_t, qref_t, speed=SPEED,
+        r_none_t = run_trial(plant, ilc_nn, lam_t, xz_t, qref_t, speed=SPEED,
                              settle=SETTLE, use_ilc=False)
         # naive = reuse the m=0 (shape A) table, which is what you'd have if
         # you only ever trained on the base path
@@ -182,11 +183,11 @@ def main():
                              speed=SPEED, settle=SETTLE, use_ilc=True)
         print(f"      unseen path  no correction: {r_none_t['rms_um']:.0f} um")
         print(f"      unseen path  naive (A table): {r_naive2['rms_um']:.0f} um")
-        print(f"      unseen path  NN (0 trials):   {r_ai['rms_um']:.0f} um")
+        print(f"      unseen path  NN (0 trials):   {r_nn['rms_um']:.0f} um")
 
         fig, ax = plt.subplots(figsize=(6.6, 4.2))
         names = ["no\ncorrection", "naive\n(A table)", "neural net\n(0 trials)"]
-        vals = [r_none_t["rms_um"], r_naive2["rms_um"], r_ai["rms_um"]]
+        vals = [r_none_t["rms_um"], r_naive2["rms_um"], r_nn["rms_um"]]
         bar_log(ax, names, vals, [C.NO_CORR, C.NAIVE, C.LEARNED],
                 ylabel="Cartesian RMS error [µm] (log)",
                 title="Neural-network correction on an unseen path (zero trials)")

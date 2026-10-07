@@ -28,6 +28,7 @@ CAM = dict(lookat=[0.55, 0.0, 0.32], distance=1.0, azimuth=120.0, elevation=-32.
 
 
 def make_cam():
+    """Fixed free camera used for the contact-task renders."""
     c = mujoco.MjvCamera()
     c.lookat[:] = CAM["lookat"]; c.distance = CAM["distance"]
     c.azimuth = CAM["azimuth"]; c.elevation = CAM["elevation"]
@@ -35,6 +36,7 @@ def make_cam():
 
 
 def render_gif(path=os.path.join(OUT, "kuka_contact.gif")):
+    """Train the contact-task ILC, then render no-ILC / after-ILC passes to a GIF."""
     from PIL import Image
     ref = make_contact_reference(n=200)
     lambdas, xyz, qref = ref
@@ -59,6 +61,7 @@ def render_gif(path=os.path.join(OUT, "kuka_contact.gif")):
 
 
 def live():
+    """Train, then loop no-ILC / after-ILC passes in the interactive viewer."""
     import mujoco.viewer
     ref = make_contact_reference(n=200)
     lambdas, xyz, qref = ref

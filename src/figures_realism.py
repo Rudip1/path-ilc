@@ -37,6 +37,8 @@ REF = None
 
 
 def ilc_of(nq=6):
+    """Path-ILC for the KUKA reference with Q-filter half-window `nq`
+    (`nq=0` disables the filter)."""
     return PathILC(n_intervals=N, n_joints=7, Kp_ilc=1.0, Kd_ilc=0.01,
                    Nq=nq, f_cutoff_hz=5.0, Ts=2e-3)
 
@@ -58,6 +60,8 @@ def run_session(effects, n_trials=7, nq=6, freeze_after=None):
 
 # --------------------------------------------------------------------------
 def fig_ablation():
+    """Raw vs converged RMS with each realistic effect on its own and all
+    together (realistic_effects_ablation.png)."""
     configs = [
         ("baseline", Effects()),
         ("+transm.\nerror", Effects(te=True)),
@@ -91,6 +95,8 @@ def fig_ablation():
 
 
 def fig_qfilter():
+    """ILC with vs without the Gaussian Q-filter under coarse, noisy encoders
+    (qfilter_noise_rejection.png)."""
     # stress-test noise level (coarser + larger than a good 19-bit encoder) so
     # the filter's effect is visible; the point is the mechanism, not the number.
     fx = Effects(encoder_noise=True, enc_sigma=6e-4, enc_bits=13)
@@ -117,6 +123,8 @@ def fig_qfilter():
 
 
 def fig_transmission():
+    """Plot the injected transmission-error profile for joints 1, 3, 5
+    (transmission_error_profile.png)."""
     fx = Effects()           # defaults hold the TE harmonics
     th = np.linspace(-1.2, 1.2, 800)
     fig, ax = plt.subplots(figsize=(8.4, 4.3))
@@ -132,6 +140,8 @@ def fig_transmission():
 
 
 def fig_thermal():
+    """Frozen vs online ILC during a thermal warm-up
+    (thermal_frozen_vs_online.png)."""
     n_trials, freeze = 14, 6
     # frozen-after-`freeze` table
     rms_fr, _, plant_fr = run_session(Effects(thermal=True), n_trials=n_trials,
@@ -206,7 +216,7 @@ def _eval_table_at_temp(level, table):
     return r["rms_um"]
 
 
-def fig_thermal_ai():
+def fig_thermal_learned():
     """Temperature-aware learned layer (a temperature-indexed linear model): learn correction = f(joint temperature), then
     predict the correction for an UNSEEN thermal state with zero trials. Beats a
     frozen cold table; matches the oracle that re-learns at that temperature."""
@@ -223,6 +233,7 @@ def fig_thermal_ai():
     B = np.linalg.solve(Xb.T @ Xb + lam * np.eye(Xb.shape[1]), Xb.T @ Y)
 
     def predict(temp_vec):
+        """Linear prediction of the (N, 7) correction table at `temp_vec`."""
         return (np.append(temp_vec, 1.0) @ B).reshape(N, 7)
 
     # held-out hot state
@@ -260,6 +271,7 @@ def fig_thermal_ai():
 
 
 def main():
+    """Generate all realistic-effects figures."""
     global REF
     REF = make_reference("A", n=N)
     print("[1/5] ablation across realistic effects ...")
@@ -271,7 +283,7 @@ def main():
     print("[4/5] thermal drift: frozen vs online ILC ...")
     fig_thermal()
     print("[5/5] temperature-aware learned layer ...")
-    fig_thermal_ai()
+    fig_thermal_learned()
     print("Done. Saved realistic-effects figures in outputs/.")
 
 

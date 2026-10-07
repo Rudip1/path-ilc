@@ -56,6 +56,7 @@ def frozen_trial_render(plant, ilc, ref, renderer, cam):
 
 
 def main(path=os.path.join(OUT, "kuka_thermal_dashboard.mp4")):
+    """Run frozen and online ILC through a warm-up and animate the dashboard to MP4."""
     ref = make_reference("A", n=N)
     lambdas, xyz, qref = ref
     fx = lambda: Effects(thermal=True)

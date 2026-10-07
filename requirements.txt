@@ -1,5 +1,5 @@
 mujoco==3.9.0              # MuJoCo physics engine
 numpy==2.4.6
 matplotlib==3.10.9
-torch==2.12.0              # AI correction layer
+torch==2.12.0              # learned correction layer
 robot_descriptions==2.0.0  # fetches the KUKA iiwa14 (MuJoCo Menagerie)

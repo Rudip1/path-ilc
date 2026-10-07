@@ -61,13 +61,17 @@ def path_point_morph(lam, m):
 
 
 def make_reference(kind="A", n=300):
-    """Precompute desired Cartesian points and ideal reference motor angles."""
+    """Precompute desired Cartesian points and ideal reference motor angles.
+
+    Returns (lambdas, xyz, q_ref) with shapes (n,), (n, 3) and (n, 7).
+    """
     lambdas = np.linspace(0.0, 1.0, n)
     xyz = np.array([path_point(l, kind) for l in lambdas])
     return lambdas, xyz, _ik_chain(xyz)
 
 
 def make_reference_morph(m, n=300):
+    """Like `make_reference` for the morphed path (see `path_point_morph`)."""
     lambdas = np.linspace(0.0, 1.0, n)
     xyz = np.array([path_point_morph(l, m) for l in lambdas])
     return lambdas, xyz, _ik_chain(xyz)
@@ -96,7 +100,10 @@ def run_trial(plant, ilc, lambdas, xyz_ref, q_ref, hold=25, settle=400,
     error that the path-indexed ILC is designed to learn. Speed generalization
     is tested by reusing the SAME learned table at a different `hold`.
 
-    Returns joint-side error (for the ILC) and true Cartesian error (eval only).
+    Returns joint-side error (for the ILC) and true Cartesian error (eval only)
+    as a dict with keys: `lambdas` (n,), `eq` (n, 7) joint-side error [rad],
+    `cart_err_m` (n,) TCP error [m], `rms_um` / `max_um` [um], and the true /
+    desired TCP points `xyz_true`, `xyz_des` (n, 3).
     """
     n = len(lambdas)
     plant.reset(q_ref[0])
