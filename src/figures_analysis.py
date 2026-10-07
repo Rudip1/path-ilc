@@ -6,8 +6,8 @@ of the ICRA paper (and tying in the mechanical-vibration view of the joints).
 
 Writes to ../outputs:
   trialwise_overview.png   - paper Fig.5 clone: Cartesian error / ILC input / path
-                         speed over 7 trials (trial 3: speed change; trial 5:
-                         ILC off; trial 6: ILC on)
+                         speed over 7 trials at constant speed (trial 5: ILC
+                         off; trial 6: ILC on)
   encoder_validation.png    - GROUND-TRUTH validation: the learned correction u(lambda)
                          recovers the true drivetrain joint error (only possible
                          in simulation; impossible with a laser tracker)
@@ -92,11 +92,13 @@ def run_protocol(plant, ref):
 
 
 def rms_um(err):
+    """RMS of the Euclidean norm of an (n, 3) error array [m], in um."""
     return 1e6 * np.sqrt(np.mean(np.sum(err ** 2, axis=1)))
 
 
 # --------------------------------------------------------------------------
 def fig_paper_style(recs):
+    """Trial-wise TCP error, ILC inputs and path speed (trialwise_overview.png)."""
     fig, ax = plt.subplots(3, 1, figsize=(9.5, 8.0), sharex=True)
     # shade trials + labels
     for i, r in enumerate(recs):
@@ -180,6 +182,7 @@ def fig_validation(recs, ilc):
 
 
 def fig_error_vs_path(recs):
+    """TCP error vs path parameter, trial 0 vs trial 4 (error_along_path.png)."""
     lam = recs[0]["lam"]
     e0 = 1e6 * np.linalg.norm(recs[0]["err"], axis=1)
     # last fully-corrected, learning trial is index 4 (before ILC-off)
@@ -266,6 +269,7 @@ def fig_vibration(plant, ref):
 
 
 def main():
+    """Run the analysis protocol and write the four analysis figures."""
     plant = FlexArmPlant()
     ref = make_reference("A", n=N)
     print("running 7-trial paper protocol ...")

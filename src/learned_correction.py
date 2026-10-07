@@ -39,7 +39,10 @@ except Exception:
 def path_features(lambdas, xz_ref):
     """Geometry descriptor the network sees: the desired (x, z) along the
     path, flattened. This is the 'context' -- analogous to the environment
-    context in a context-adaptive controller."""
+    context in a context-adaptive controller.
+
+    `lambdas` is unused (kept for a uniform signature). `xz_ref` may be the
+    (n, 2) toy path or the (n, 3) KUKA path."""
     return xz_ref.reshape(-1)
 
 
@@ -59,6 +62,7 @@ if _HAS_TORCH:
             )
 
         def forward(self, x):
+            """Return the flattened correction table for a batch `x`."""
             return self.net(x)
 
     def train_correction_net(features, tables, epochs=400, lr=1e-3, seed=0):

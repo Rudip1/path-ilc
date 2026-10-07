@@ -69,6 +69,7 @@ def collect_trial(plant, ilc, ref, use_ilc, renderer, cam, trace_rgba):
 
 
 def main(path=os.path.join(OUT, "kuka_learning_dashboard.mp4")):
+    """Collect N_TRIALS rendered trials and animate the 4-panel dashboard to MP4."""
     ref = make_reference("A", n=N)
     lambdas, xyz, qref = ref
     plant = FlexArmPlant(marker_xyz=xyz[::3])

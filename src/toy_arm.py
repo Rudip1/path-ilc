@@ -2,7 +2,7 @@
 MuJoCo arm "plant" with deliberately UNMODELED dynamics.
 
 Design choice that keeps this honest (not circular):
-  - The CONTROLLER (in run.py) plans using a simple rigid kinematic model:
+  - The CONTROLLER (in toy_simulation.py) plans using a simple rigid kinematic model:
     it computes reference joint angles for a desired Cartesian path and
     commands them, assuming the joints follow perfectly.
   - The PLANT simulated here has extras the controller does NOT know about:
@@ -120,6 +120,7 @@ class ArmPlant:
             self.model, mujoco.mjtObj.mjOBJ_SITE, "tcp")
 
     def reset(self, q0):
+        """Set the joint angles to `q0` with zero velocity."""
         self.data.qpos[:3] = q0
         self.data.qvel[:3] = 0.0
         mujoco.mj_forward(self.model, self.data)

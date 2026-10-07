@@ -34,6 +34,7 @@ CAM = dict(lookat=[0.45, 0.0, 0.45], distance=1.7, azimuth=140.0, elevation=-18.
 
 
 def make_cam():
+    """Fixed free camera used for the KUKA renders."""
     c = mujoco.MjvCamera()
     c.lookat[:] = CAM["lookat"]; c.distance = CAM["distance"]
     c.azimuth = CAM["azimuth"]; c.elevation = CAM["elevation"]
@@ -41,6 +42,7 @@ def make_cam():
 
 
 def train(plant, ref):
+    """Run N_TRIALS ILC trials on `ref` (no rendering) and return the ILC."""
     lambdas, xyz, qref = ref
     ilc = new_ilc(len(lambdas))
     for i in range(N_TRIALS):
@@ -110,6 +112,7 @@ def capture_pass(plant, ilc, ref, use_ilc, renderer, cam, label, frames,
 
 
 def render_gif(path=os.path.join(OUT, "kuka_tracking.gif")):
+    """Train, then render a no-ILC pass and an after-ILC pass to a GIF."""
     from PIL import Image
     ref = make_reference("A", n=N)
     lambdas, xyz, qref = ref
@@ -134,6 +137,7 @@ def render_gif(path=os.path.join(OUT, "kuka_tracking.gif")):
 
 
 def live():
+    """Train, then loop no-ILC / after-ILC passes in the interactive viewer."""
     import mujoco.viewer
     ref = make_reference("A", n=N)
     lambdas, xyz, qref = ref
